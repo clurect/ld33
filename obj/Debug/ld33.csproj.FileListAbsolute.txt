@@ -1,0 +1,6 @@
+C:\Users\Stephen\code\ludum\ld33\obj\Debug\ld33.csprojResolveAssemblyReference.cache
+C:\Users\Stephen\code\ludum\ld33\bin\ld33.dll.config
+C:\Users\Stephen\code\ludum\ld33\bin\ld33.dll
+C:\Users\Stephen\code\ludum\ld33\bin\ld33.pdb
+C:\Users\Stephen\code\ludum\ld33\obj\Debug\ld33.dll
+C:\Users\Stephen\code\ludum\ld33\obj\Debug\ld33.pdb
