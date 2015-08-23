@@ -26,12 +26,15 @@
     <Content Include="app.css" />
     <Content Include="assets\audio\village.mp3" />
     <Content Include="assets\img\bg.png" />
+    <Content Include="assets\img\characters.png" />
     <Content Include="assets\img\clouds-11.jpg" />
     <Content Include="assets\img\greep.png" />
     <Content Include="assets\img\spritesheet.png" />
     <Content Include="assets\img\txtPacker.png" />
+    <Content Include="assets\maps\tileset.png" />
     <Content Include="Gulpfile.js" />
     <Content Include="index.html" />
+    <Content Include="phaser\phaser.js" />
     <Content Include="phaser\phaser.min.js" />
     <Content Include="web.config" />
   </ItemGroup>
@@ -47,6 +50,10 @@
     <Content Include="assets\img\sprites.json" />
     <Content Include="assets\img\txtPacker.json" />
     <Content Include="package.json" />
+    <Content Include="assets\maps\map.json" />
+    <Content Include="assets\maps\main.tsx" />
+    <Content Include="assets\maps\map.tmx" />
+    <Content Include="assets\maps\mapu.json" />
     <None Include="web.Debug.config">
       <DependentUpon>web.config</DependentUpon>
     </None>

@@ -1,0 +1,61 @@
+{ "height":100,
+ "layers":[
+        {
+         "compression":"zlib",
+         "data":"eJzt2EEKwyAQQFGT+x+6q1IQrZPQ6YB5i0dskoX4KdYerbXjgrO7UuucjMlZ67fZ\/dGz6nnvrl9\/Pepb9OPVu+S2iK63JvlNZuPV\/lI99x2NekT2DD1yW6x6+E78t0e\/r0f6kdNk9RtXj\/ous+fV8+TTYzTmd+sbXdfROaV6\/ruJ9rhzZuR+j8h\/JN8+k9PlyvvVc36CyPmDmiZ6AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPB0LxhEJ3M=",
+         "encoding":"base64",
+         "height":100,
+         "name":"Cobble",
+         "opacity":1,
+         "type":"tilelayer",
+         "visible":true,
+         "width":100,
+         "x":0,
+         "y":0
+        }],
+ "nextobjectid":1,
+ "orientation":"orthogonal",
+ "properties":
+    {
+
+    },
+ "renderorder":"right-down",
+ "tileheight":32,
+ "tilesets":[
+        {
+         "firstgid":1,
+         "image":"tileset.png",
+         "imageheight":256,
+         "imagewidth":256,
+         "margin":0,
+         "name":"MonsterLand",
+         "properties":
+            {
+
+            },
+         "spacing":0,
+         "terrains":[
+                {
+                 "name":"Ground",
+                 "tile":0
+                }],
+         "tilecount":64,
+         "tileheight":32,
+         "tiles":
+            {
+             "0":
+                {
+                 "terrain":[0, 0, 0, 0]
+                },
+             "1":
+                {
+                 "terrain":[0, 0, 0, 0]
+                }
+            },
+         "tilewidth":32,
+         "transparentcolor":"#ff00ff"
+        }],
+ "tilewidth":32,
+ "version":1,
+ "width":100
+}
