@@ -20,9 +20,9 @@ var SimpleGame = (function () {
         this.collideLayer = this.map.createLayer('Collide');
         this.map.setCollision([17, 18, 19, 20, 25, 26, 27, 28], true, this.collideLayer);
         //var logo = this.game.add.sprite(this.game.world.centerX, this.game.world.centerY, 'logo');
-        this.player = this.game.add.sprite(0, 0, 'characters', 'carrot');
+        this.player = this.game.add.sprite(0, 0, 'characters', 'spirit');
         this.player.anchor.setTo(0.5, 0.5);
-        this.carrots[0] = this.game.add.sprite(800, 200, 'characters', 'carrot');
+        this.carrots[0] = this.game.add.sprite(600, 200, 'characters', 'carrot');
         this.carrots[0].anchor.setTo(0.5, 0.5);
         this.rabbit = this.game.add.sprite(500, 500, 'characters', 'rabbit');
         this.rabbit.anchor.setTo(0.5, 0.5);
@@ -32,7 +32,7 @@ var SimpleGame = (function () {
         this.player.body.drag.set(0.2);
         this.player.body.maxVelocity.setTo(400, 400);
         this.player.body.collideWorldBounds = true;
-        this.instructions = this.game.add.text(800, 150, 'Click on him to possess', { font: '50px Arial', fill: '#000' });
+        this.instructions = this.game.add.text(600, 150, 'Click on him to possess', { font: '40px Arial', fill: '#000' });
         this.instructions.anchor.setTo(0.5, 0.5);
         this.carrots[0].body.drag.set(0.2);
         this.carrots[0].body.maxVelocity.setTo(400, 400);
@@ -41,7 +41,7 @@ var SimpleGame = (function () {
         this.rabbit.body.maxVelocity.setTo(400, 400);
         this.rabbit.body.collideWorldBounds = true;
         var bgmusic = this.game.add.audio('vikings');
-        //bgmusic.play("",0,1,true,true);
+        bgmusic.play("", 0, 1, true, true);
         this.game.camera.follow(this.player);
         this.game.camera.deadzone = new Phaser.Rectangle(150, 150, 500, 300);
         this.game.camera.focusOnXY(0, 0);
@@ -76,19 +76,19 @@ var SimpleGame = (function () {
         //the rabbit still needs to collide with things
         this.game.physics.arcade.collide([this.rabbit], this.collideLayer);
         if (this.player.isPhysical && this.inRadius(this.player, this.rabbit, 200)) {
-            console.log('run away');
+            //console.log('run away');
             var runAwayAngle = Phaser.Math.angleBetween(this.rabbit.x, this.rabbit.y, this.player.x, this.player.y) + Math.PI;
-            this.game.debug.text("RUN: " + runAwayAngle, 32, 32);
+            //this.game.debug.text("RUN: " + runAwayAngle, 32, 32);
             this.game.physics.arcade.velocityFromRotation(runAwayAngle, 200, this.rabbit.body.velocity);
         }
         else {
             if (!this.inRadius(this.rabbit, { x: 500, y: 500 }, 50)) {
-                console.log('go to middle');
+                //console.log('go to middle');
                 this.game.physics.arcade.moveToXY(this.rabbit, 500, 500, 100);
             }
         }
         if (this.player.isPhysical) {
-            this.instructions = this.game.add.text(500, 450, 'Now kill this carrot eating son of a bunny', { font: '30px Arial', fill: '#000' });
+            this.instructions = this.game.add.text(500, 450, 'Now kill this carrot eating jerk', { font: '30px Arial', fill: '#000' });
             this.instructions.anchor.setTo(0.5, 0.5);
             this.game.physics.arcade.collide(this.player, this.rabbit, function (s, t) {
                 if (s.isPhysical === true) {
