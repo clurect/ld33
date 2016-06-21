@@ -34,7 +34,7 @@ class SimpleGame {
     collideLayer: Phaser.TilemapLayer;
     rabbits: Rabbit[];
     carrot: Phaser.Sprite;
-    instructions: Phaser.Text;
+    instructions: Phaser.Text[];
     create() {
 
         (<any>window).thus = this;
@@ -42,6 +42,7 @@ class SimpleGame {
         this.oldpointer = new Phaser.Pointer(this.game,23);
         this.map = this.game.add.tilemap('map');
         this.rabbits = new Array();
+        this.instructions = new Array();
         this.map.addTilesetImage('MonsterLand', 'tiles');
 
         this.layer = this.map.createLayer('Ground');
@@ -76,9 +77,11 @@ class SimpleGame {
         this.player.body.maxVelocity.setTo(400, 400);
         this.player.body.collideWorldBounds = true;
 
-        this.instructions = this.game.add.text(600, 150, 'Click on him to possess', { font: '40px Arial', fill: '#000' });
-        this.instructions.anchor.setTo(0.5, 0.5);
 
+        this.instructions[0] = this.game.add.text(600, 150, 'press P to possess', { font: '40px Arial', fill: '#000' });
+        this.instructions[0].anchor.setTo(0.5, 0.5);
+        this.instructions[1] = this.game.add.text(500, 450, 'Now kill these carrot eating jerks', {font: '30px Arial', fill: '#000' });
+        this.instructions[1].anchor.setTo(0.5, 0.5);
 
         this.carrot.body.drag.set(0.2);
         this.carrot.body.maxVelocity.setTo(400, 400);
@@ -105,48 +108,44 @@ class SimpleGame {
     }
     oldpointer: Phaser.Pointer;  // = { x: 0, y: 0 };
     update() {
-        var wideRadius = 42;
-        if (this.game.input.activePointer.isDown) {
+      this.game.time.advancedTiming = true;
+      this.game.debug.text(''+this.game.time.fps, 100,100);
 
-            // get the location only when the pointer is clicked, set to variable to ensure that the character stops following the pointer after it is let go
-            if (!this.inRadius(this.player, this.oldpointer, wideRadius)) this.currentSpeed = 400;
-            this.oldpointer.x = this.game.input.activePointer.worldX.valueOf();
-            this.oldpointer.y = this.game.input.activePointer.worldY.valueOf();
-            this.game.physics.arcade.moveToPointer(this.player, this.currentSpeed, this.game.input.activePointer);
 
+        this.player.body.velocity.y = 0;
+        this.player.body.velocity.x = 0;
+        var vel = 400;
+        if (this.game.input.keyboard.isDown(Phaser.Keyboard.W)) {
+          this.player.body.velocity.y = -vel;
         }
-
-        if (this.currentSpeed > 0 && this.inRadius(this.player, this.oldpointer, wideRadius)) {
-            this.currentSpeed -= 4;
-            //this.game.physics.arcade.moveToXY(this.carrot, this.currentSpeed, 1,2);
-            //TODO need to fix movement when the pointer moves
-            this.game.physics.arcade.moveToPointer(this.player, this.currentSpeed, this.game.input.activePointer);
+        if (this.game.input.keyboard.isDown(Phaser.Keyboard.S)) {
+          this.player.body.velocity.y = vel;
         }
-
-        var radius = 22;
-        if (this.inRadius(this.player, this.oldpointer, radius)) {
-            this.currentSpeed = 0;
-            this.game.physics.arcade.moveToPointer(this.player, this.currentSpeed, this.game.input.activePointer);
+        if (this.game.input.keyboard.isDown(Phaser.Keyboard.D)) {
+          this.player.body.velocity.x = vel;
         }
-
-
+        if (this.game.input.keyboard.isDown(Phaser.Keyboard.A)) {
+          this.player.body.velocity.x = -vel;
+        }
 
         // the only collision that an etherial being can have is with other monsters to possess them
 
-        this.game.physics.arcade.collide(this.player, this.carrot, function (t, s) {
-          console.log(this.player);
-          console.log(s);
-          this.possess(t, s);
-          this.instructions.destroy();
-        }, null, this);
+        // this.game.physics.arcade.collide(this.player, this.carrot, function (t, s) {
+        //   this.possess(t, s);
+        //   this.instructions.destroy();
+        // }, null, this);
+        if (!this.player.isPhysical && this.game.input.keyboard.isDown(Phaser.Keyboard.P) && this.game.physics.arcade.distanceBetween(this.player, this.carrot) < 100) {
+          this.possess(this.player, this.carrot);
+          this.instructions[0].destroy();
+          this.instructions[1].destroy();
+        }
         //the rabbits still needs to collide with things
         for(var i = 0; i < this.rabbits.length; i++) {
           this.game.physics.arcade.collide(this.rabbits[i], this.collideLayer);
         }
         // this checks to see if the character is close to the enemy and causes the enemy to run away
         if (this.player.isPhysical) {
-          this.instructions = this.game.add.text(500, 450, 'Now kill these carrot eating jerks', {font: '30px Arial', fill: '#000' });
-          this.instructions.anchor.setTo(0.5, 0.5);
+
           for(var i = 0; i < this.rabbits.length; i++) {
             if (this.inRadius(this.player, this.rabbits[i], 200)) {
               console.log(this.rabbits[i].runSpeed);
@@ -162,16 +161,14 @@ class SimpleGame {
             }
 
             this.game.physics.arcade.collide(this.player, this.rabbits[i], function (s, t: Phaser.Sprite) {
-                if (s.isPhysical === true) {
-                    t.kill();
-                    this.rabbits.splice(i,1);
-
-                }
+              t.kill();
+              this.rabbits.splice(i,1);
+              this.gameCheck();
             }, null, this);
             this.game.physics.arcade.collide(this.player, this.collideLayer);
           }
         }
-        this.gameCheck();
+
     }
     gameCheck () {
       if (this.rabbits.length <= 0) {
@@ -184,6 +181,7 @@ class SimpleGame {
         choiseLabel.anchor.setTo(0.5, 0.5);
     }
     possess(t,s) {
+      console.log(t);
         t.kill();
         this.player = s;
         //when possessed the camera needs to be readjusted
