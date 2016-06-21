@@ -7,6 +7,7 @@ var Rabbit = (function (_super) {
     __extends(Rabbit, _super);
     function Rabbit() {
         _super.apply(this, arguments);
+        this.runSpeed = 200;
     }
     return Rabbit;
 }(Phaser.Sprite));
@@ -39,10 +40,12 @@ var SimpleGame = (function () {
         this.rabbits[0].anchor.setTo(0.5, 0.5);
         this.rabbits[0].originX = 500;
         this.rabbits[0].originY = 500;
+        this.rabbits[0].runSpeed = 250;
         this.rabbits[1] = this.game.add.sprite(100, 500, 'characters', 'rabbit');
         this.rabbits[1].anchor.setTo(0.5, 0.5);
         this.rabbits[1].originX = 100;
         this.rabbits[1].originY = 500;
+        this.rabbits[1].runSpeed = 200;
         this.game.physics.enable(this.player, Phaser.Physics.ARCADE);
         this.game.physics.enable(this.rabbits[0], Phaser.Physics.ARCADE);
         this.game.physics.enable(this.rabbits[1], Phaser.Physics.ARCADE);
@@ -91,13 +94,17 @@ var SimpleGame = (function () {
             this.possess(t, s);
             this.instructions.destroy();
         }, null, this);
+        for (var i = 0; i < this.rabbits.length; i++) {
+            this.game.physics.arcade.collide(this.rabbits[i], this.collideLayer);
+        }
         if (this.player.isPhysical) {
             this.instructions = this.game.add.text(500, 450, 'Now kill these carrot eating jerks', { font: '30px Arial', fill: '#000' });
             this.instructions.anchor.setTo(0.5, 0.5);
             for (var i = 0; i < this.rabbits.length; i++) {
                 if (this.inRadius(this.player, this.rabbits[i], 200)) {
+                    console.log(this.rabbits[i].runSpeed);
                     var runAwayAngle = Phaser.Math.angleBetween(this.rabbits[i].x, this.rabbits[i].y, this.player.x, this.player.y) + Math.PI;
-                    this.game.physics.arcade.velocityFromRotation(runAwayAngle, 200, this.rabbits[i].body.velocity);
+                    this.game.physics.arcade.velocityFromRotation(runAwayAngle, this.rabbits[i].runSpeed, this.rabbits[i].body.velocity);
                 }
                 else {
                     if (!this.inRadius(this.rabbits[i], { x: this.rabbits[i].originX, y: this.rabbits[i].originY }, 50)) {
@@ -109,7 +116,6 @@ var SimpleGame = (function () {
                         t.kill();
                         this.rabbits.splice(i, 1);
                     }
-                    console.log(this.rabbits);
                 }, null, this);
                 this.game.physics.arcade.collide(this.player, this.collideLayer);
             }
