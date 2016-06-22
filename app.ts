@@ -5,7 +5,6 @@ class Rabbit extends Phaser.Sprite {
   originX:number;
   originY:number;
   runSpeed:number = 200;
-
 }
 class SimpleGame {
 
@@ -44,6 +43,8 @@ class SimpleGame {
         this.rabbitGroup
         this.oldpointer = new Phaser.Pointer(this.game,23);
         this.map = this.game.add.tilemap('map');
+        // not sure how to use groups right now, visit later
+        //this.rabbitGroup = new Phaser.Group(this.game, undefined, "Rabbits",false,null, null);
         this.rabbits = new Array();
         this.instructions = new Array();
         this.map.addTilesetImage('MonsterLand', 'tiles');
@@ -64,46 +65,28 @@ class SimpleGame {
         this.littleCarrot.scale.setTo(0.5, 0.5);
         this.littleCarrot.anchor.setTo(0.5, 0.5);
 
-        this.rabbits[0] = <Rabbit> this.game.add.sprite(500, 500, 'characters', 'rabbit');
-        this.rabbits[0].anchor.setTo(0.5, 0.5);
-        this.rabbits[0].originX = 500;
-        this.rabbits[0].originY = 500;
-        this.rabbits[0].runSpeed = 250;
-
-        this.rabbits[1] = <Rabbit> this.game.add.sprite(100, 500, 'characters', 'rabbit');
-        this.rabbits[1].anchor.setTo(0.5, 0.5);
-        this.rabbits[1].originX = 100;
-        this.rabbits[1].originY = 500;
-        this.rabbits[1].runSpeed = 200;
+        this.addEnemy(0, 500, 500, 250);
+        this.addEnemy(1, 100, 500, 200);
 
         this.game.physics.enable(this.player, Phaser.Physics.ARCADE);
-        this.game.physics.enable(this.rabbits[0], Phaser.Physics.ARCADE);
-        this.game.physics.enable(this.rabbits[1], Phaser.Physics.ARCADE);
+
+
         this.game.physics.enable(this.carrot, Phaser.Physics.ARCADE);
         this.game.physics.enable(this.littleCarrot, Phaser.Physics.ARCADE);
         this.player.body.drag.set(0.2);
         this.player.body.maxVelocity.setTo(400, 400);
         this.player.body.collideWorldBounds = true;
 
+        this.addGameText(600, 150, 'press Space to possess when near', { font: '40px Arial', fill: '#000' });
 
-        this.instructions[0] = this.game.add.text(600, 150, 'press P to possess', { font: '40px Arial', fill: '#000' });
-        this.instructions[0].anchor.setTo(0.5, 0.5);
-        this.instructions[1] = this.game.add.text(500, 450, 'Now kill these carrot eating jerks', {font: '30px Arial', fill: '#000' });
-        this.instructions[1].anchor.setTo(0.5, 0.5);
+        this.addGameText(500, 450, 'Now kill these carrot eating jerks', {font: '30px Arial', fill: '#000' });
+
 
         this.carrot.body.drag.set(0.2);
         this.carrot.body.maxVelocity.setTo(400, 400);
         this.carrot.body.collideWorldBounds = true;
 
         this.littleCarrot.body.collideWorldBounds = true;
-
-        this.rabbits[0].body.drag.set(0.2);
-        this.rabbits[0].body.maxVelocity.setTo(400, 400);
-        this.rabbits[0].body.collideWorldBounds = true;
-
-        this.rabbits[1].body.drag.set(0.2);
-        this.rabbits[1].body.maxVelocity.setTo(400, 400);
-        this.rabbits[1].body.collideWorldBounds = true;
 
         var bgmusic = this.game.add.audio('background');
 
@@ -120,8 +103,8 @@ class SimpleGame {
     update() {
       // this.instructions[0].destroy();
       // this.instructions[1].destroy();
-      // this.game.add.text(400, 400, 'Intermission', { font: '40px Arial', fill: '#000' }).anchor.setTo(0.5, 0.5);
-      // this.movementPaused = true;
+      // this.game.add.text(400, 200, 'Intermission', { font: '40px Arial', fill: '#000' }).anchor.setTo(0.5, 0.5);
+      // this.game.paused = true;
 
       this.game.time.advancedTiming = true;
       this.game.debug.text(''+this.game.time.fps, 100,100);
@@ -161,24 +144,17 @@ class SimpleGame {
           // x < 500, go right, x > 800 go left, simple???
           if (this.game.input.keyboard.isDown(Phaser.Keyboard.SPACEBAR) && this.game.physics.arcade.distanceBetween(this.player, this.carrot) < 100) {
             this.possess(this.player, this.carrot);
-            this.instructions[0].destroy();
-            this.instructions[1].destroy();
+            this.killInstructions();
           }
         }
-        //the rabbits still needs to collide with things
-        for(var i = 0; i < this.rabbits.length; i++) {
-          this.game.physics.arcade.collide(this.rabbits[i], this.collideLayer);
-        }
 
-        //chase the carrot before possession? chase little carrots?
-        var runTowardAngle = Phaser.Math.angleBetween(this.rabbits[0].x, this.rabbits[0].y, this.littleCarrot.x, this.littleCarrot.y);
+
+        //chase little carrots
+        var runTowardAngle = this.runAway(this.littleCarrot,this.rabbits[0]);//Phaser.Math.angleBetween(this.rabbits[0].x, this.rabbits[0].y, this.littleCarrot.x, this.littleCarrot.y);
         this.game.physics.arcade.velocityFromRotation(runTowardAngle, this.rabbits[0].runSpeed/2, this.rabbits[0].body.velocity);
 
         if (this.inRadius(this.littleCarrot, this.rabbits[0], 200)) {
-
-          var runAwayAngle = Phaser.Math.angleBetween(this.rabbits[0].x, this.rabbits[0].y, this.littleCarrot.x, this.littleCarrot.y);// + Math.PI;
-
-          this.game.physics.arcade.velocityFromRotation(runAwayAngle, 70, this.littleCarrot.body.velocity);
+          this.game.physics.arcade.velocityFromRotation(this.runAway(this.littleCarrot,this.rabbits[0]), 70, this.littleCarrot.body.velocity);
         }
         else {
           this.game.physics.arcade.moveToXY(this.littleCarrot, 600, 800, 50);
@@ -190,31 +166,46 @@ class SimpleGame {
         },null, this);
         // this checks to see if the character is close to the enemy and causes the enemy to run away
         if (this.player.isPhysical) {
+          this.game.physics.arcade.collide(this.player, this.collideLayer);
+        }
+        for(var i = 0; i < this.rabbits.length; i++) {
+          this.game.physics.arcade.collide(this.rabbits[i], this.collideLayer);
 
-          for(var i = 0; i < this.rabbits.length; i++) {
-
+          if (this.player.isPhysical) {
             if (this.inRadius(this.player, this.rabbits[i], 200)) {
               console.log(this.rabbits[i].runSpeed);
               var runAwayAngle = Phaser.Math.angleBetween(this.rabbits[i].x, this.rabbits[i].y, this.player.x, this.player.y) + Math.PI;
 
               this.game.physics.arcade.velocityFromRotation(runAwayAngle, this.rabbits[i].runSpeed, this.rabbits[i].body.velocity);
             }
-            else {
-                if (!this.inRadius(this.rabbits[i], { x: this.rabbits[i].originX, y: this.rabbits[i].originY }, 50)) {
-                    //console.log('go to middle');
-                    this.game.physics.arcade.moveToXY(this.rabbits[i], this.rabbits[i].originX, this.rabbits[i].originY, 100);
-                }
+            else if (!this.inRadius(this.rabbits[i], { x: this.rabbits[i].originX, y: this.rabbits[i].originY }, 50)) {
+              //console.log('go to middle');
+              this.game.physics.arcade.moveToXY(this.rabbits[i], this.rabbits[i].originX, this.rabbits[i].originY, 100);
             }
-
             this.game.physics.arcade.collide(this.player, this.rabbits[i], function (s, t: Phaser.Sprite) {
               t.kill();
               this.rabbits.splice(i,1);
 
             }, null, this);
-            this.game.physics.arcade.collide(this.player, this.collideLayer);
           }
+
         }
         this.gameCheck();
+    }
+    addGameText(x, y, text, style){
+      this.instructions.push(this.game.add.text(x, y, text, style));
+    }
+    addEnemy(index, x, y, speed) {
+      this.rabbits[index] = <Rabbit> this.game.add.sprite(x, y, 'characters', 'rabbit');
+      this.rabbits[index].anchor.setTo(0.5, 0.5);
+      this.rabbits[index].originX = x;
+      this.rabbits[index].originY = y;
+      this.rabbits[index].runSpeed = speed;
+      this.game.physics.enable(this.rabbits[index], Phaser.Physics.ARCADE);
+      this.rabbits[index].body.drag.set(0.2);
+      this.rabbits[index].body.maxVelocity.setTo(speed, speed);
+      this.rabbits[index].body.collideWorldBounds = true;
+
     }
     gameCheck () {
       if (this.rabbits.length <= 0) {
@@ -229,10 +220,19 @@ class SimpleGame {
         var choiseLabel = this.game.add.text(this.player.x, this.player.y, 'YOU WON!', { font: '50px Arial', fill: '#000' });
         choiseLabel.anchor.setTo(0.5, 0.5);
     }
+    runAway(who, whoFrom) {
+      return Phaser.Math.angleBetween(who.x, who.y, whoFrom.x, whoFrom.y) + Math.PI;
+    }
     gameLost() {
       this.movementPaused = true;
       var choiseLabel = this.game.add.text(this.player.x, this.player.y, 'Little Carrot died, game over!', { font: '50px Arial', fill: '#000' });
       choiseLabel.anchor.setTo(0.5, 0.5);
+    }
+    killInstructions() {
+      for(var i = 0; i < this.instructions.length; i++) {
+        this.instructions[i].destroy();
+      }
+      this.instructions = new Array();
     }
     possess(t,s) {
       console.log(t);
