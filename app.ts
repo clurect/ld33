@@ -18,7 +18,7 @@ class SimpleGame {
     preload() {
 
         this.game.load.atlas('characters', 'assets/img/spritesheet.png', 'assets/img/sprites.json');
-        this.game.load.audio('vikings', 'assets/audio/vikings.mp3');
+        this.game.load.audio('background', 'assets/audio/Constancy Part One.mp3');
 
         this.game.load.tilemap('map', 'assets/maps/mapu.json', null, Phaser.Tilemap.TILED_JSON);
         this.game.load.image('tiles', 'assets/maps/tileset.png');
@@ -35,6 +35,7 @@ class SimpleGame {
     rabbits: Rabbit[];
     carrot: Phaser.Sprite;
     instructions: Phaser.Text[];
+    movementPaused: Boolean;
     create() {
 
         (<any>window).thus = this;
@@ -95,25 +96,27 @@ class SimpleGame {
         this.rabbits[1].body.maxVelocity.setTo(400, 400);
         this.rabbits[1].body.collideWorldBounds = true;
 
-        var bgmusic = this.game.add.audio('vikings');
+        var bgmusic = this.game.add.audio('background');
 
-        //bgmusic.play("",0,1,true,true);
+        bgmusic.play("",0,1,true,true);
 
         this.game.camera.follow(this.player);
         this.game.camera.deadzone = new Phaser.Rectangle(150, 150, 500, 300);
         this.game.camera.focusOnXY(0, 0);
         this.cursors = this.game.input.keyboard.createCursorKeys();
 
-
+        this.movementPaused = false;
     }
     oldpointer: Phaser.Pointer;  // = { x: 0, y: 0 };
     update() {
       this.game.time.advancedTiming = true;
       this.game.debug.text(''+this.game.time.fps, 100,100);
 
-
         this.player.body.velocity.y = 0;
         this.player.body.velocity.x = 0;
+        if (this.movementPaused) {
+          return;
+        }
         var vel = 400;
         if (this.game.input.keyboard.isDown(Phaser.Keyboard.W)) {
           this.player.body.velocity.y = -vel;
@@ -128,12 +131,6 @@ class SimpleGame {
           this.player.body.velocity.x = -vel;
         }
 
-        // the only collision that an etherial being can have is with other monsters to possess them
-
-        // this.game.physics.arcade.collide(this.player, this.carrot, function (t, s) {
-        //   this.possess(t, s);
-        //   this.instructions.destroy();
-        // }, null, this);
         if (!this.player.isPhysical && this.game.input.keyboard.isDown(Phaser.Keyboard.P) && this.game.physics.arcade.distanceBetween(this.player, this.carrot) < 100) {
           this.possess(this.player, this.carrot);
           this.instructions[0].destroy();
@@ -176,7 +173,7 @@ class SimpleGame {
       }
     }
     gameWon() {
-        this.game.paused = true;
+        this.movementPaused = true;
         var choiseLabel = this.game.add.text(this.player.x, this.player.y, 'YOU WON!', { font: '50px Arial', fill: '#000' });
         choiseLabel.anchor.setTo(0.5, 0.5);
     }
