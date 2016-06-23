@@ -1,20 +1,48 @@
 ﻿interface Object {
     isPhysical: boolean;
 }
-class Rabbit extends Phaser.Sprite {
-  originX:number;
-  originY:number;
+
+class Rabbit extends MovingEntity {
   runSpeed:number = 200;
-  constructor(game, x, y) {
-    super(game, x, y);
+  hitTimer: number;
+  constructor(game, x, y, objs) {
+    super(game, x, y, objs);
     Phaser.Sprite.call(this, game, x, y, 'characters','rabbit');
+    this.game.add.existing(this);
+    this.entityType = 'enemy';
+    this.hitTimer = 0;
+  }
+  update() {
+    // for (var i = 0; i < this.objs.length; i++) {
+    //   if (this.objs[i].entityType == 'enemy') {
+    //
+    //   }
+    // }
+  }
+  hit(who) {
+    if (this.hitTimer <= this.game.time.totalElapsedSeconds()) {
+      who.damage(10);
+      this.hitTimer=this.game.time.totalElapsedSeconds()+3;
+    }
+  }
+}
+class Carrot extends MovingEntity {
+  runSpeed:number = 200;
+  isDefenseless:boolean;
+  constructor(game, x, y, objs) {
+    super(game, x, y, objs);
+    Phaser.Sprite.call(this, game, x, y, 'characters','carrot');
     this.game.add.existing(this);
   }
   update() {
-
+    // for (var i = 0; i < this.objs.length; i++) {
+    //   if (this.objs[i].entityType == 'enemy') {
+    //
+    //   }
+    // }
   }
 }
-class SimpleGame {
+class MonsterPossession {
 
     constructor() {
         this.game = new Phaser.Game(800, 600, Phaser.AUTO, '', { preload: this.preload.bind(this), create: this.create.bind(this), update: this.update.bind(this), render: this.render.bind(this) });
@@ -32,6 +60,7 @@ class SimpleGame {
         this.game.load.bitmapFont('gothic', 'assets/fonts/font.png', 'assets/fonts/font.xml');
         this.game.load.image('textarea','assets/img/textarea.png');
     }
+    objs;
     player: Phaser.Sprite;
     cursors;
     currentSpeed:number = 0;
@@ -40,7 +69,8 @@ class SimpleGame {
     layer: Phaser.TilemapLayer;
     collideLayer: Phaser.TilemapLayer;
     rabbits: Rabbit[];
-    carrot: Phaser.Sprite;
+    //carrot: Phaser.Sprite;
+    carrot: Carrot;
     littleCarrot: Phaser.Sprite;
     instructions: Phaser.BitmapText[];
     movementPaused: Boolean;
@@ -70,12 +100,14 @@ class SimpleGame {
         this.player = this.game.add.sprite(0, 0, 'characters', 'spirit');
         this.player.anchor.setTo(0.5, 0.5);
         this.possessing = false;
-        this.carrot = this.game.add.sprite(600, 200, 'characters', 'carrot');
+        this.carrot = new Carrot(this.game, 600, 200, null);
+        //this.carrot = this.game.add.sprite(600, 200, 'characters', 'carrot');
         this.carrot.anchor.setTo(0.5, 0.5);
 
         this.littleCarrot = this.game.add.sprite(600, 800, 'characters', 'carrot');
         this.littleCarrot.scale.setTo(0.5, 0.5);
         this.littleCarrot.anchor.setTo(0.5, 0.5);
+        this.littleCarrot.health = 100;
 
         this.addEnemy(0, 500, 500, 250);
         this.addEnemy(1, 100, 500, 200);
@@ -104,7 +136,7 @@ class SimpleGame {
         this.game.camera.focusOnXY(0, 0);
         this.cursors = this.game.input.keyboard.createCursorKeys();
 
-        this.addGameText('Press space to possess carrot monsters when near\nStop the rabbits from eating the small carrots\n[space]');
+        this.addGameText('Press space to possess carrot monsters when near.\nStop the rabbits from eating the small carrots.\n[space to continue]');
         this.movementPaused = true;
     }
 
@@ -143,29 +175,15 @@ class SimpleGame {
           this.player.body.velocity.x = -vel;
         }
         if (!this.player.isPhysical){
-          //600, 200
-
-          //todo carrot roaming
-          // if (this.carrot.body.velocity.x > 0 && this.carrot.x > 800) {
-          //   this.carrot.body.velocity.x = -100;
-          // }
-          // else if (this.carrot.x < 600){
-          //   this.carrot.body.velocity.x = 100;
-          // }
-          // else {
-          //   this.carrot.body.velocity.x = -100;
-          // }
           this.game.physics.arcade.collide(this.carrot, this.collideLayer);
           // this.game.debug.text(''+this.game.time.totalElapsedSeconds(), 100,200);
           // this.game.debug.text('wander time '+this.wanderTime, 100,250);
           // this.game.debug.text('velx '+ this.carrot.body.velocity.x,100,300)
           // this.game.debug.text('vely '+ this.carrot.body.velocity.y,100,350)
 
-          if (this.wanderTime < this.game.time.totalElapsedSeconds() || this.wanderTime == 0) {
-            this.carrot.body.velocity = new Phaser.Point(this.randomPosNeg()*20, this.randomPosNeg()*20);
 
-            this.wanderTime = this.game.time.totalElapsedSeconds() + Math.random()*10;
-          }
+          this.wander(this.carrot);
+          // this.wander(this.rabbits[1]);
 
           // x < 500, go right, x > 800 go left, simple???
           if (this.game.input.keyboard.isDown(Phaser.Keyboard.SPACEBAR) && this.game.physics.arcade.distanceBetween(this.player, this.carrot) < 100) {
@@ -174,22 +192,7 @@ class SimpleGame {
           }
         }
 
-
-        //chase little carrots
-        var runTowardAngle = this.runAway(this.littleCarrot,this.rabbits[0]);//Phaser.Math.angleBetween(this.rabbits[0].x, this.rabbits[0].y, this.littleCarrot.x, this.littleCarrot.y);
-        this.game.physics.arcade.velocityFromRotation(runTowardAngle, this.rabbits[0].runSpeed/2, this.rabbits[0].body.velocity);
-
-        if (this.inRadius(this.littleCarrot, this.rabbits[0], 200)) {
-          this.game.physics.arcade.velocityFromRotation(this.runAway(this.littleCarrot,this.rabbits[0]), 70, this.littleCarrot.body.velocity);
-        }
-        else {
-          this.game.physics.arcade.moveToXY(this.littleCarrot, 600, 800, 50);
-        }
-
-        this.game.physics.arcade.collide(this.littleCarrot, this.rabbits[0], function (s, t: Phaser.Sprite) {
-          s.kill(); // NOOO little carrot dude gets killed!
-          this.littleCarrot.alive = false;
-        },null, this);
+        this.game.debug.text('' + this.littleCarrot.health,50,250);
         // this checks to see if the character is close to the enemy and causes the enemy to run away
         if (this.player.isPhysical) {
           this.game.physics.arcade.collide(this.player, this.collideLayer);
@@ -197,17 +200,19 @@ class SimpleGame {
         for(var i = 0; i < this.rabbits.length; i++) {
           this.game.physics.arcade.collide(this.rabbits[i], this.collideLayer);
 
-          if (this.player.isPhysical) {
-            if (this.inRadius(this.player, this.rabbits[i], 200)) {
-              console.log(this.rabbits[i].runSpeed);
-              var runAwayAngle = Phaser.Math.angleBetween(this.rabbits[i].x, this.rabbits[i].y, this.player.x, this.player.y) + Math.PI;
 
-              this.game.physics.arcade.velocityFromRotation(runAwayAngle, this.rabbits[i].runSpeed, this.rabbits[i].body.velocity);
-            }
-            else if (!this.inRadius(this.rabbits[i], { x: this.rabbits[i].originX, y: this.rabbits[i].originY }, 50)) {
-              //console.log('go to middle');
-              this.game.physics.arcade.moveToXY(this.rabbits[i], this.rabbits[i].originX, this.rabbits[i].originY, 100);
-            }
+          if (this.player.isPhysical && this.inRadius(this.player, this.rabbits[i], 200)) {
+            var runAwayAngle = Phaser.Math.angleBetween(this.rabbits[i].x, this.rabbits[i].y, this.player.x, this.player.y) + Math.PI;
+
+            this.game.physics.arcade.velocityFromRotation(runAwayAngle, this.rabbits[i].runSpeed, this.rabbits[i].body.velocity);
+          }
+          else {
+            this.chaseCarrots(this.rabbits[i]);
+            this.wander(this.rabbits[i]);
+            //console.log('go to middle');
+            //this.game.physics.arcade.moveToXY(this.rabbits[i], this.rabbits[i].originX, this.rabbits[i].originY, 100);
+          }
+          if (this.player.isPhysical) {
             this.game.physics.arcade.collide(this.player, this.rabbits[i], function (s, t: Phaser.Sprite) {
               t.kill();
               this.rabbits.splice(i,1);
@@ -221,14 +226,14 @@ class SimpleGame {
     addGameText(text){
       var spotY = this.game.camera.position.y+ this.game.camera.height/2;
       var spotX = this.game.camera.position.x- this.game.camera.width/2;
-      
+
 
       this.textarea = this.game.add.image(spotX,spotY-150,'textarea');
       this.instructions.push(this.game.add.bitmapText(spotX+10,spotY-140, 'gothic', text, 24));
 
     }
     addEnemy(index, x, y, speed) {
-      this.rabbits[index] = new Rabbit(this.game, x, y); //<Rabbit> this.game.add.sprite(x, y, 'characters', 'rabbit');
+      this.rabbits[index] = new Rabbit(this.game, x, y, this.objs); //<Rabbit> this.game.add.sprite(x, y, 'characters', 'rabbit');
       this.rabbits[index].anchor.setTo(0.5, 0.5);
       this.rabbits[index].originX = x;
       this.rabbits[index].originY = y;
@@ -239,12 +244,33 @@ class SimpleGame {
       this.rabbits[index].body.collideWorldBounds = true;
 
     }
+    chaseCarrots(who) {
+      if (!this.inRadius(this.littleCarrot, who, 300))
+        return;
+      console.log('chase chase!!');
+      //chase little carrots
+      var runTowardAngle = this.runAway(this.littleCarrot,who);//Phaser.Math.angleBetween(this.rabbits[0].x, this.rabbits[0].y, this.littleCarrot.x, this.littleCarrot.y);
+      this.game.physics.arcade.velocityFromRotation(runTowardAngle, who.runSpeed/2, who.body.velocity);
+
+      if (this.inRadius(this.littleCarrot, who, 200)) {
+        this.game.physics.arcade.velocityFromRotation(this.runAway(this.littleCarrot,who), 70, this.littleCarrot.body.velocity);
+      }
+      else {
+        this.game.physics.arcade.moveToXY(this.littleCarrot, 600, 800, 50);
+      }
+      this.game.physics.arcade.collide(this.littleCarrot, who, function (s, t) {
+        t.hit(s);
+      },null, this);
+    }
+    carrotRunAway() {
+
+    }
     gameCheck () {
       if (this.rabbits.length <= 0) {
         this.gameWon();
       }
       if (!this.littleCarrot.alive) {
-        //this.gameLost();
+        this.gameLost();
       }
     }
     gameWon() {
@@ -302,7 +328,14 @@ class SimpleGame {
 
 
     }
+    wander(who) {
+      if (who.wanderTime < this.game.time.totalElapsedSeconds() || who.wanderTime == 0) {
+        who.body.velocity = new Phaser.Point(this.randomPosNeg()*20, this.randomPosNeg()*20);
+
+        who.wanderTime = this.game.time.totalElapsedSeconds() + Math.random()*10;
+      }
+    }
 }
 window.onload = function () {
-    var game = new SimpleGame();
+    var game = new MonsterPossession();
 };
