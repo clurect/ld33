@@ -5,10 +5,14 @@ var __extends = (this && this.__extends) || function (d, b) {
 };
 var Rabbit = (function (_super) {
     __extends(Rabbit, _super);
-    function Rabbit() {
-        _super.apply(this, arguments);
+    function Rabbit(game, x, y) {
+        _super.call(this, game, x, y);
         this.runSpeed = 200;
+        Phaser.Sprite.call(this, game, x, y, 'characters', 'rabbit');
+        this.game.add.existing(this);
     }
+    Rabbit.prototype.update = function () {
+    };
     return Rabbit;
 }(Phaser.Sprite));
 var SimpleGame = (function () {
@@ -21,11 +25,12 @@ var SimpleGame = (function () {
         this.game.load.audio('background', 'assets/audio/Constancy Part One.mp3');
         this.game.load.tilemap('map', 'assets/maps/mapu.json', null, Phaser.Tilemap.TILED_JSON);
         this.game.load.image('tiles', 'assets/maps/tileset.png');
+        this.game.load.bitmapFont('gothic', 'assets/fonts/font.png', 'assets/fonts/font.xml');
+        this.game.load.image('textarea', 'assets/img/textarea.png');
     };
     SimpleGame.prototype.create = function () {
         window.thus = this;
-        this.rabbitGroup;
-        this.oldpointer = new Phaser.Pointer(this.game, 23);
+        this.wanderTime = 0;
         this.map = this.game.add.tilemap('map');
         this.rabbits = new Array();
         this.instructions = new Array();
@@ -36,6 +41,7 @@ var SimpleGame = (function () {
         this.map.setCollision([17, 18, 19, 20, 25, 26, 27, 28], true, this.collideLayer);
         this.player = this.game.add.sprite(0, 0, 'characters', 'spirit');
         this.player.anchor.setTo(0.5, 0.5);
+        this.possessing = false;
         this.carrot = this.game.add.sprite(600, 200, 'characters', 'carrot');
         this.carrot.anchor.setTo(0.5, 0.5);
         this.littleCarrot = this.game.add.sprite(600, 800, 'characters', 'carrot');
@@ -49,8 +55,6 @@ var SimpleGame = (function () {
         this.player.body.drag.set(0.2);
         this.player.body.maxVelocity.setTo(400, 400);
         this.player.body.collideWorldBounds = true;
-        this.addGameText(600, 150, 'press Space to possess when near', { font: '40px Arial', fill: '#000' });
-        this.addGameText(500, 450, 'Now kill these carrot eating jerks', { font: '30px Arial', fill: '#000' });
         this.carrot.body.drag.set(0.2);
         this.carrot.body.maxVelocity.setTo(400, 400);
         this.carrot.body.collideWorldBounds = true;
@@ -61,14 +65,21 @@ var SimpleGame = (function () {
         this.game.camera.deadzone = new Phaser.Rectangle(150, 150, 500, 300);
         this.game.camera.focusOnXY(0, 0);
         this.cursors = this.game.input.keyboard.createCursorKeys();
-        this.movementPaused = false;
+        this.addGameText('Press space to possess carrot monsters when near\nStop the rabbits from eating the small carrots\n[space]');
+        this.movementPaused = true;
     };
     SimpleGame.prototype.update = function () {
         this.game.time.advancedTiming = true;
-        this.game.debug.text('' + this.game.time.fps, 100, 100);
+        this.game.debug.text('' + this.game.time.fps, 50, 50);
+        this.game.debug.text('' + this.game.camera.position.y, 50, 100);
+        this.game.debug.text('' + this.game.camera.position.x, 50, 150);
         this.player.body.velocity.y = 0;
         this.player.body.velocity.x = 0;
         if (this.movementPaused) {
+            if (this.game.input.keyboard.isDown(Phaser.Keyboard.SPACEBAR)) {
+                this.movementPaused = false;
+                this.killInstructions();
+            }
             return;
         }
         var vel = 400;
@@ -85,6 +96,11 @@ var SimpleGame = (function () {
             this.player.body.velocity.x = -vel;
         }
         if (!this.player.isPhysical) {
+            this.game.physics.arcade.collide(this.carrot, this.collideLayer);
+            if (this.wanderTime < this.game.time.totalElapsedSeconds() || this.wanderTime == 0) {
+                this.carrot.body.velocity = new Phaser.Point(this.randomPosNeg() * 20, this.randomPosNeg() * 20);
+                this.wanderTime = this.game.time.totalElapsedSeconds() + Math.random() * 10;
+            }
             if (this.game.input.keyboard.isDown(Phaser.Keyboard.SPACEBAR) && this.game.physics.arcade.distanceBetween(this.player, this.carrot) < 100) {
                 this.possess(this.player, this.carrot);
                 this.killInstructions();
@@ -124,11 +140,14 @@ var SimpleGame = (function () {
         }
         this.gameCheck();
     };
-    SimpleGame.prototype.addGameText = function (x, y, text, style) {
-        this.instructions.push(this.game.add.text(x, y, text, style));
+    SimpleGame.prototype.addGameText = function (text) {
+        var spotY = this.game.camera.position.y + this.game.camera.height / 2;
+        var spotX = this.game.camera.position.x - this.game.camera.width / 2;
+        this.textarea = this.game.add.image(spotX, spotY - 150, 'textarea');
+        this.instructions.push(this.game.add.bitmapText(spotX + 10, spotY - 140, 'gothic', text, 24));
     };
     SimpleGame.prototype.addEnemy = function (index, x, y, speed) {
-        this.rabbits[index] = this.game.add.sprite(x, y, 'characters', 'rabbit');
+        this.rabbits[index] = new Rabbit(this.game, x, y);
         this.rabbits[index].anchor.setTo(0.5, 0.5);
         this.rabbits[index].originX = x;
         this.rabbits[index].originY = y;
@@ -143,13 +162,18 @@ var SimpleGame = (function () {
             this.gameWon();
         }
         if (!this.littleCarrot.alive) {
-            this.gameLost();
         }
     };
     SimpleGame.prototype.gameWon = function () {
         this.movementPaused = true;
-        var choiseLabel = this.game.add.text(this.player.x, this.player.y, 'YOU WON!', { font: '50px Arial', fill: '#000' });
-        choiseLabel.anchor.setTo(0.5, 0.5);
+        this.game.add.text(this.player.x, this.player.y - this.player.height, 'YOU WON!', { font: '50px Arial', fill: '#000' }).anchor.setTo(0.5, 0.5);
+        this.addGameText('You won!');
+    };
+    SimpleGame.prototype.randomPosNeg = function () {
+        var num = Math.random();
+        if (num < 0.5)
+            num = -num;
+        return num;
     };
     SimpleGame.prototype.runAway = function (who, whoFrom) {
         return Phaser.Math.angleBetween(who.x, who.y, whoFrom.x, whoFrom.y) + Math.PI;
@@ -164,14 +188,16 @@ var SimpleGame = (function () {
             this.instructions[i].destroy();
         }
         this.instructions = new Array();
+        this.textarea.destroy();
     };
     SimpleGame.prototype.possess = function (t, s) {
-        console.log(t);
-        t.kill();
-        this.player = s;
-        this.game.camera.follow(this.player);
-        this.game.camera.focusOnXY(this.player.x, this.player.y);
-        this.player.isPhysical = true;
+        if (!this.possessing) {
+            t.kill();
+            this.player = s;
+            this.game.camera.follow(this.player);
+            this.game.camera.focusOnXY(this.player.x, this.player.y);
+            this.player.isPhysical = true;
+        }
     };
     SimpleGame.prototype.inRadius = function (thing1, thing2, radius) {
         return thing1.x >= thing2.x - radius && thing2.x + radius >= thing1.x && thing1.y >= thing2.y - radius && thing2.y + radius >= thing1.y;
