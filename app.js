@@ -18,7 +18,7 @@ var Rabbit = (function (_super) {
     Rabbit.prototype.hit = function (who) {
         if (this.hitTimer <= this.game.time.totalElapsedSeconds()) {
             who.damage(10);
-            this.hitTimer = this.game.time.totalElapsedSeconds() + 3;
+            this.hitTimer = this.game.time.totalElapsedSeconds() + 2;
         }
     };
     return Rabbit;
@@ -83,7 +83,7 @@ var MonsterPossession = (function () {
         var bgmusic = this.game.add.audio('background');
         bgmusic.play("", 0, 1, true, true);
         this.game.camera.follow(this.player);
-        this.game.camera.deadzone = new Phaser.Rectangle(150, 150, 500, 300);
+        this.game.camera.deadzone = new Phaser.Rectangle(150, 150, 200, 200);
         this.game.camera.focusOnXY(0, 0);
         this.cursors = this.game.input.keyboard.createCursorKeys();
         this.addGameText('Press space to possess carrot monsters when near.\nStop the rabbits from eating the small carrots.\n[space to continue]');

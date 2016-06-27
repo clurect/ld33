@@ -22,7 +22,8 @@ class Rabbit extends MovingEntity {
   hit(who) {
     if (this.hitTimer <= this.game.time.totalElapsedSeconds()) {
       who.damage(10);
-      this.hitTimer=this.game.time.totalElapsedSeconds()+3;
+      // todo could have these in variables and change them to adjust difficulty
+      this.hitTimer=this.game.time.totalElapsedSeconds()+2;
     }
   }
 }
@@ -132,7 +133,7 @@ class MonsterPossession {
         bgmusic.play("",0,1,true,true);
 
         this.game.camera.follow(this.player);
-        this.game.camera.deadzone = new Phaser.Rectangle(150, 150, 500, 300);
+        this.game.camera.deadzone = new Phaser.Rectangle(150, 150, 200, 200);
         this.game.camera.focusOnXY(0, 0);
         this.cursors = this.game.input.keyboard.createCursorKeys();
 
